@@ -167,7 +167,7 @@ func HandleAuthConnection(r *http.Request, conn gorillawswrapper.Wrapper) error 
 		break
 	}
 
-	err = conn.WriteJSON(servermessages.CreateConnectedMessage())
+	err = conn.WriteJSON(servermessages.CreateAuthorizedMessage())
 	if err != nil {
 		return err
 	}

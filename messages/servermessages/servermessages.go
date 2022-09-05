@@ -42,8 +42,8 @@ func CreateServerError(payload ErrorPayload) Message {
 	}
 }
 
-func CreateConnectedMessage() MessageNoData {
+func CreateAuthorizedMessage() MessageNoData {
 	return MessageNoData{
-		Type: "CONNECTED",
+		Type: "AUTHORIZED",
 	}
 }

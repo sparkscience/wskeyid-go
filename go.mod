@@ -1,4 +1,4 @@
-module github.com/sparkscience/wskeyid-go
+module github.com/sparkscience/wskeyid-go/v2
 
 go 1.18
 

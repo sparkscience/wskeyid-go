@@ -12,9 +12,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/shovon/gorillawswrapper"
-	"github.com/sparkscience/wskeyid-go"
-	"github.com/sparkscience/wskeyid-go/messages/clientmessage"
-	"github.com/sparkscience/wskeyid-go/messages/servermessages"
+	"github.com/sparkscience/wskeyid-go/v2"
+	"github.com/sparkscience/wskeyid-go/v2/messages/clientmessage"
+	"github.com/sparkscience/wskeyid-go/v2/messages/servermessages"
 )
 
 var upgrader = websocket.Upgrader{

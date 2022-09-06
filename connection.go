@@ -40,7 +40,7 @@ func parseChallengeResponse(m gorillawswrapper.Message) (plaintext []byte, signa
 	}
 
 	if clientMessage.Type != "CHALLENGE_RESPONSE" {
-		return nil, nil, ErrNotAChallengeResponse
+		return nil, nil, NotAValidChallengeResponse{clientMessage}
 	}
 
 	var cr clientmessage.ChallengeResponse
@@ -135,7 +135,7 @@ func HandleAuthConnection(r *http.Request, conn gorillawswrapper.Wrapper) error 
 					servermessages.ErrorPayload{
 						Title:  "Not a challenge response",
 						Detail: "Expected a challenge response but got something else that the JSON parser was not able to parse",
-						Meta:   map[string]string{"error": err.Error()},
+						Meta:   map[string]interface{}{"error_message": err.Error(), "error": err},
 					},
 				),
 			)

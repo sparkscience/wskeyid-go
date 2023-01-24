@@ -10,10 +10,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sparkscience/wskeyid-go/v2/messages/clientmessage"
-	"github.com/sparkscience/wskeyid-go/v2/messages/servermessages"
-
-	"github.com/shovon/gorillawswrapper"
+	"github.com/gorilla/websocket"
+	"github.com/sparkscience/go-wskeyid/messages/clientmessage"
+	"github.com/sparkscience/go-wskeyid/messages/servermessages"
 )
 
 const challengeByteLength = 128
@@ -32,9 +31,9 @@ func getChallengePayload() (plaintext string, err error) {
 }
 
 // It will be safe to assume that any error coming from this function is
-func parseChallengeResponse(m gorillawswrapper.Message) (plaintext []byte, signature []byte, err error) {
+func parseChallengeResponse(m []byte) (plaintext []byte, signature []byte, err error) {
 	var clientMessage clientmessage.Message
-	err = json.Unmarshal(m.Message, &clientMessage)
+	err = json.Unmarshal(m, &clientMessage)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -77,7 +76,7 @@ func verifySignature(key *ecdsa.PublicKey, pt, sig []byte) bool {
 	return ecdsa.Verify(key, hash[:], r, s)
 }
 
-func HandleAuthConnection(r *http.Request, conn gorillawswrapper.Wrapper) error {
+func HandleAuthConnection(r *http.Request, conn *websocket.Conn) error {
 	// Grab the client ID
 	// TODO: perhaps soft-code the query parameter name for grabbing the client_id
 	clientId := strings.TrimSpace(r.URL.Query().Get("client_id"))
@@ -122,9 +121,13 @@ func HandleAuthConnection(r *http.Request, conn gorillawswrapper.Wrapper) error 
 		return err
 	}
 	for {
-		m, ok := <-conn.MessagesChannel()
-		if !ok {
-			return ErrConnectionClosed
+		mType, m, err := conn.ReadMessage()
+		if err != nil {
+			return err
+		}
+
+		if mType != websocket.TextMessage && mType != websocket.BinaryMessage {
+			continue
 		}
 
 		pt, sig, err := parseChallengeResponse(m)

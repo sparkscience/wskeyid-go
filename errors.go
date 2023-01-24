@@ -3,7 +3,7 @@ package wskeyid
 import (
 	"errors"
 
-	"github.com/sparkscience/wskeyid-go/v2/messages/clientmessage"
+	"github.com/sparkscience/go-wskeyid/messages/clientmessage"
 )
 
 var (

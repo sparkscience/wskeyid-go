@@ -11,10 +11,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/shovon/gorillawswrapper"
-	"github.com/sparkscience/wskeyid-go/v2"
-	"github.com/sparkscience/wskeyid-go/v2/messages/clientmessage"
-	"github.com/sparkscience/wskeyid-go/v2/messages/servermessages"
+	"github.com/sparkscience/go-wskeyid"
+	"github.com/sparkscience/go-wskeyid/messages/clientmessage"
+	"github.com/sparkscience/go-wskeyid/messages/servermessages"
 )
 
 var upgrader = websocket.Upgrader{
@@ -49,10 +48,8 @@ func main() {
 		}
 		defer c.Close()
 
-		conn := gorillawswrapper.NewWrapper(c)
-
 		{
-			err := wskeyid.HandleAuthConnection(r, conn)
+			err := wskeyid.HandleAuthConnection(r, c)
 			if err != nil {
 				return
 			}
@@ -62,36 +59,34 @@ func main() {
 
 		go func() {
 			for {
-				conn.WriteJSON(map[string]interface{}{"Type": "COOL"})
+				c.WriteJSON(map[string]interface{}{"type": "COOL"})
 				<-time.After(time.Second * time.Duration(randInt(10)))
 			}
 		}()
-
-		defer conn.Stop()
 
 		clientId := strings.TrimSpace(r.URL.Query().Get("client_id"))
 
 		fmt.Printf("Connected to client with ID %s\n", clientId)
 
 		go func() {
-			for !conn.HasStopped() {
-				fmt.Printf("Has stopped %t\n", conn.HasStopped())
-				err := conn.WriteJSON(servermessages.Message{Type: "TEXT_MESSAGE", Data: "Cool"})
-				fmt.Println("Sending message")
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Got error %s", err.Error())
-					return
-				}
-				<-time.After(time.Second * time.Duration(randInt(10)))
+			err := c.WriteJSON(servermessages.Message{Type: "TEXT_MESSAGE", Data: "Cool"})
+			fmt.Println("Sending message")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Got error %s", err.Error())
+				return
 			}
+			<-time.After(time.Second * time.Duration(randInt(10)))
 		}()
 
-		for msg := range conn.MessagesChannel() {
+		for t, message, err := c.ReadMessage(); err == nil; {
 			fmt.Printf("Got message")
 			var m clientmessage.Message
-			json.Unmarshal(msg.Message, &m)
-			if m.Type != "TEXT_MESSAGE" {
-				fmt.Printf("Got message of %s from %s", m.Type, clientId)
+			if t != websocket.BinaryMessage && t != websocket.TextMessage {
+				continue
+			}
+			json.Unmarshal(message, &m)
+			if m.Type != "RESPONSE" {
+				fmt.Printf("Got message of type %s from %s\n", m.Type, clientId)
 				continue
 			}
 			var str string
@@ -99,13 +94,13 @@ func main() {
 			if err != nil {
 				fmt.Printf("Failed to get message body")
 			} else {
-				fmt.Printf("Got message from client %s: %s", clientId, str)
+				fmt.Printf("Got message from client %s: %s\n", clientId, str)
 			}
 		}
 
 		fmt.Println("Message stream ended between client and server. Closing connection")
 	})
 
-	fmt.Println("Server listening on port 8000")
-	panic(http.ListenAndServe(":8000", router))
+	fmt.Println("Server listening on port 8001")
+	panic(http.ListenAndServe(":8001", router))
 }

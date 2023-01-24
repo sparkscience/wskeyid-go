@@ -241,6 +241,7 @@
 								);
 							});
 					} else {
+						console.log(message);
 						ws.send(JSON.stringify({ type: "RESPONSE", data: "Haha" }));
 					}
 				});
